@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 type Config struct {
@@ -14,14 +16,22 @@ type Config struct {
 }
 
 func main() {
+	log.Fatal(run())
+}
+
+func run() error {
 	conf := loadConfig()
 
 	http.HandleFunc("/", handler(conf))
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", conf.port), nil))
+	return http.ListenAndServe(fmt.Sprintf(":%s", conf.port), nil)
 }
 
 func loadConfig() Config {
+	viper.SetDefault("port", "9090")
+	viper.SetDefault("defaultSearch", "https://www.google.com/search?q=%s")
+	viper.SetDefault("aliases", map[string]string{})
+
 	return Config{
 		port:          "9090",
 		defaultSearch: "https://www.google.com/search?q=%s",
@@ -41,5 +51,4 @@ func handler(c Config) http.HandlerFunc {
 
 		http.Redirect(w, r, dest, http.StatusTemporaryRedirect)
 	}
-
 }

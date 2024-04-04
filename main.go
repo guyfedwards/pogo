@@ -1,51 +1,48 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
-
-	"github.com/spf13/viper"
 )
-
-type Config struct {
-	port          string
-	defaultSearch string
-	aliases       map[string]string
-}
 
 func main() {
 	log.Fatal(run())
 }
 
+var port = flag.String("Port", "9090", "port to run on")
+
 func run() error {
-	conf := loadConfig()
+	flag.Parse()
+
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return fmt.Errorf("run: %w", err)
+	}
+	configFile := fmt.Sprintf("%s/pogo/config.yaml", configDir)
+
+	conf := NewConfig(configFile, *port)
+	err = conf.Load()
+
+	if err != nil {
+		return fmt.Errorf("run: %w", err)
+	}
 
 	http.HandleFunc("/", handler(conf))
 
-	return http.ListenAndServe(fmt.Sprintf(":%s", conf.port), nil)
+	return http.ListenAndServe(fmt.Sprintf(":%s", conf.Port), nil)
 }
 
-func loadConfig() Config {
-	viper.SetDefault("port", "9090")
-	viper.SetDefault("defaultSearch", "https://www.google.com/search?q=%s")
-	viper.SetDefault("aliases", map[string]string{})
-
-	return Config{
-		port:          "9090",
-		defaultSearch: "https://www.google.com/search?q=%s",
-		aliases:       map[string]string{},
-	}
-}
-
-func handler(c Config) http.HandlerFunc {
+func handler(c *Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		alias := strings.Replace(r.URL.Path, "/", "", 1)
 
-		dest := c.aliases[alias]
+		dest := c.Aliases[alias]
 		if dest == "" {
-			http.Redirect(w, r, strings.Replace(c.defaultSearch, "%s", alias, 1), http.StatusTemporaryRedirect)
+			http.Redirect(w, r, strings.Replace(c.DefaultSearch, "%s", alias, 1), http.StatusTemporaryRedirect)
 			return
 		}
 

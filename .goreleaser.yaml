@@ -1,0 +1,69 @@
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - id: darwin-amd64
+    main: main.go
+    binary: pogo
+    goarch:
+      - amd64
+    goos:
+      - darwin
+    env:
+      - CC=o64-clang
+    flags:
+      - -mod=readonly
+  - id: darwin-arm64
+    binary: pogo
+    main: ./main.go
+    goarch:
+      - arm64
+    goos:
+      - darwin
+    env:
+      - CC=oa64-clang
+  - id: linux-amd64
+    main: main.go
+    binary: pogo
+    goos:
+      - linux
+    goarch:
+      - amd64
+    env:
+      - CC=x86_64-linux-gnu-gcc
+    flags:
+      - -trimpath
+  - id: linux-arm64
+    main: main.go
+    binary: pogo
+    goos:
+      - linux
+    goarch:
+      - arm64
+    env:
+      - CC=aarch64-linux-gnu-gcc
+    flags:
+      - -mod=readonly
+      - -trimpath
+  - id: windows-amd64
+    binary: pogo
+    main: ./main.go
+    goarch:
+      - amd64
+    goos:
+      - windows
+    env:
+      - CC=x86_64-w64-mingw32-gcc
+    flags:
+      - -trimpath
+      - -buildmode=exe
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'

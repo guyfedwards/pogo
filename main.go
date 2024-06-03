@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"syscall"
 )
 
 func main() {
@@ -26,6 +27,11 @@ func run() error {
 
 	conf := NewConfig(configFile, *port)
 	err = conf.Load()
+
+	cancel := conf.Monitor()
+	defer func() {
+		cancel <- syscall.SIGINT
+	}()
 
 	if err != nil {
 		return fmt.Errorf("run: %w", err)

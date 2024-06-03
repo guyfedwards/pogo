@@ -48,9 +48,12 @@ func (c *Config) Monitor() chan os.Signal {
 			case <-cancel:
 				return
 			case <-t.C:
-				c.Load()
+				err := c.Load()
+				if err != nil {
+					fmt.Printf("config.Monitor failed to load: %s\n", err)
+					panic(1)
+				}
 			}
-
 		}
 	}()
 
